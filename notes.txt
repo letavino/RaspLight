@@ -1,5 +1,5 @@
 /boot/config.txt 
-dtparam=spi=on
+dtparam=spi=on bzw. sudo raspi-config
 
 modprobe spi_bcm2708
 modprobe: ERROR: could not insert 'spi_bcm2708': No such device
@@ -37,3 +37,5 @@ SPI_CPOL - Clock polarity
 SPI_CPHA - Clock phase
 SPI_CS_HIGH - Chip Select active high
 SPI_NO_CS - 1 dev/bus, no chipselect
+
+g++ spitest.cpp -lwiringPi -o spitest
