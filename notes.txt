@@ -1,0 +1,39 @@
+/boot/config.txt 
+dtparam=spi=on
+
+modprobe spi_bcm2708
+modprobe: ERROR: could not insert 'spi_bcm2708': No such device
+modprobe spi_bcm2835
+
+spi speed: 1Mhz - 25Mhz
+
+SPI MOSI – PIN 19, GPIO 10
+SPI MISO – PIN 21, GPIO 9
+SPI SCLK – PIN 23, GPIO 11
+SPI CS0  – PIN 24, GPIO 8
+SPI CS1  – PIN 26, GPIO 7
+
+SCLK : Serial Clock (output from master).
+MOSI : Master Output, Slave Input (DO, output from master).
+MISO : Master Input, Slave Output (DI, output from slave).
+CS : Chip Select (active low, output from master)
+
+Gerätedateien 	/dev/spidev0.0 (Gerät an CS0)
+und 		/dev/spidev0.1 (Gerät an CS1)
+
+Der Treiber unterstützt folgende Geschwindigkeiten:
+  cdiv     speed          cdiv     speed
+    2    125.0 MHz          4     62.5 MHz
+    8     31.2 MHz         16     15.6 MHz
+   32      7.8 MHz         64      3.9 MHz
+  128     1953 kHz        256      976 kHz
+  512      488 kHz       1024      244 kHz
+ 2048      122 kHz       4096       61 kHz
+ 8192     30.5 kHz      16384     15.2 kHz
+32768     7629 Hz
+Es werden folgende Modi unterstützt (Mode bits):
+
+SPI_CPOL - Clock polarity
+SPI_CPHA - Clock phase
+SPI_CS_HIGH - Chip Select active high
+SPI_NO_CS - 1 dev/bus, no chipselect

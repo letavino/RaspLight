@@ -1,0 +1,123 @@
+Wenn Sie den SPI-Bus in C ansprechen wollen, brauchen Sie auf jeden Fall die folgenden Headerdateien:
+
+#include <fcntl.h>                // Needed for SPI port
+#include <sys/ioctl.h>            // Needed for SPI port
+#include <linux/spi/spidev.h>     // Needed for SPI port
+Der Zugriff unter C hat recht klassische Programmierweise. Nach dem Öffnen des Devices werden die Parameter eingestellt und danach ist das System bereit für den Datentransfer. Bei dem folgenden Programmfragment wird neben dem Setzen der Parameter auch gezeigt, wie man die Parameter wieder abfragen kann:
+static const char *device = "/dev/spidev0.0";
+static uint8_t mode;
+static uint8_t bits = 8;
+static uint32_t speed = 500000;
+static uint16_t delay;
+int ret, fd;
+
+/* Device oeffen */
+if ((fd = open(device, O_RDWR)) < 0)
+  {
+  perror("Fehler Open Device");
+  exit(1);
+  }
+/* Mode setzen */
+ret = ioctl(fd, SPI_IOC_WR_MODE, &mode);
+if (ret < 0)
+  {
+  perror("Fehler Set SPI-Modus");
+  exit(1);
+  }
+
+/* Mode abfragen */
+ret = ioctl(fd, SPI_IOC_RD_MODE, &mode);
+if (ret < 0)
+  {
+  perror("Fehler Get SPI-Modus");
+  exit(1);
+  }
+
+/* Wortlaenge setzen */
+ret = ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bits);
+if (ret < 0)
+  {
+  perror("Fehler Set Wortlaenge");
+  exit(1);
+  }
+
+/* Wortlaenge abfragen */
+ret = ioctl(fd, SPI_IOC_RD_BITS_PER_WORD, &bits);
+if (ret < 0)
+  {
+  perror("Fehler Get Wortlaenge");
+  exit(1);
+  }
+
+/* Datenrate setzen */
+ret = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
+if (ret < 0)
+  {
+  perror("Fehler Set Speed");
+  exit(1);
+  }
+   
+/* Datenrate abfragen */
+ret = ioctl(fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed);
+if (ret < 0)
+  {
+  perror("Fehler Get Speed");
+  exit(1);
+  }
+
+/* Kontrollausgabe */
+printf("SPI-Device.....: %s\n", device);
+printf("SPI-Mode.......: %d\n", mode);
+printf("Wortlaenge.....: %d\n", bits);
+printf("Geschwindigkeit: %d Hz (%d kHz)\n", speed, speed/1000);
+Für das Schreiben und gleichzeitige Lesen von Daten reicht eine einzige Funktion. Der Puffer-Parameter data enthält die zu sendenden Daten und er wird mit den Empfangsdaten überschrieben. Er verhält sich damit wie in an MOSI und MISO angeschlossenes Schieberegister.
+
+int SpiWriteRead (int fd, unsigned char *data, int length)
+/* Schreiben und Lesen auf SPI. Parameter:
+ * fd        Devicehandle
+ * data      Puffer mit Sendedaten, wird mit Empfangsdaten überschrieben
+ * length    Länge des Puffers
+*/
+
+  {
+	struct spi_ioc_transfer spi[length]; /* Bibliotheksstruktur fuer Schreiben/Lesen */
+  uint8_t bits = 8;                    /* Datenlaenge */
+  uint32_t speed = 500000;             /* Datenrate */
+	int i, ret;                          /* Zaehler, Returnwert */
+
+  /* Wortlaenge abfragen */
+  ret = ioctl(fd, SPI_IOC_RD_BITS_PER_WORD, &bits);
+  if (ret < 0)
+    {
+    perror("Fehler Get Wortlaenge");
+    exit(1);
+    }
+
+  /* Datenrate abfragen */
+  ret = ioctl(fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed);
+  if (ret < 0)
+    {
+    perror("Fehler Get Speed");
+    exit(1);
+    }
+
+  /* Daten uebergeben */
+	for (i = 0; i < length; i++)
+	  {
+		spi[i].tx_buf        = (unsigned long)(data + i); // transmit from "data"
+		spi[i].rx_buf        = (unsigned long)(data + i); // receive into "data"
+		spi[i].len           = sizeof(*(data + i));
+		spi[i].delay_usecs   = 0;
+		spi[i].speed_hz      = speed;
+		spi[i].bits_per_word = bits;
+		spi[i].cs_change     = 0;
+	  }
+
+	ret = ioctl(fd, SPI_IOC_MESSAGE(length), &spi) ;
+	if(ret < 0)
+    {
+		perror("Fehler beim Senden/Empfangen - ioctl");
+		exit(1);
+    }
+	return ret;
+  }

@@ -1,0 +1,41 @@
+#include <bcm2835.h>
+#include <stdio.h>
+/* ggf. weiter includes */
+
+int main(int argc, char **argv)
+  {
+  char buf [10];
+
+  if (!bcm2835_init()) return 1;   /* Bibliothek initialisieren */
+    
+  /* Schnittstenneparameter setzen */
+  bcm2835_spi_begin();
+  bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);      /* default */
+  bcm2835_spi_setDataMode(BCM2835_SPI_MODE0);                   /* default */
+  bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_65536); /* default */
+  bcm2835_spi_chipSelect(BCM2835_SPI_CS0);                      /* default */
+  bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);      /* default */
+
+  /* Device-ID abfragen */
+  buf[0] = 0x0B; buf[1] = 0x00; buf[2] = 0x00;
+  bcm2835_spi_transfern(buf, 3);
+  /* buf enthaelt die gelesenen Daten */
+  printf("Device ID: %02X \n", buf[2]);
+    
+  /* Soft-Reset des Sensors */
+  buf[0] = 0x0A; buf[1] = 0x1F; buf[2] = 0x52;
+  bcm2835_spi_transfern(buf, 3);
+  delay(1000);
+
+  /* Setup for Measure */
+  buf[0] = 0x0A; buf[1] = 0x2D; buf[2] = 0x02;
+  bcm2835_spi_transfern(buf, 3);
+  delay(1000);
+
+  /* X-Achse auslesen */
+  buf[0] = 0x0B; buf[1] = 0x0E; buf[2] = 0x00; buf[3] = 0x00;
+  bcm2835_spi_transfern(buf, 4);
+  printf("X-Achse: %02X %02X \n", buf[3], buf[2]);
+  delay(1000);
+  bcm2835_spi_end();
+  re
