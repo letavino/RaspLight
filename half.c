@@ -1,14 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef __unix__
-      #include <unistd.h>
-#elif __MSDOS__ || __WIN32__ || _MSC_VER
-      #include <io.h>
-#endif
-//#include <wiringPiSPI.h>
+#include <unistd.h>
+#include <wiringPiSPI.h>
 
-#define NLED 32
+#define NLED 33
 #define LEN 3*NLED
 #define CHANNEL 0
 #define SPEED 500000
@@ -20,21 +16,25 @@ int spi=0;
 unsigned char data[LEN];
 
 int init(){
-	//ret = wiringPiSPISetup (CHANNEL, SPEED); 
-	if(ret!=0){
-		printf("WiringPi Setup failed\n");
+	ret = wiringPiSPISetup (CHANNEL, SPEED); 
+	if(ret<0){
+		printf("WiringPi Setup failed. ret=%d\n",ret);
 		return -1;
 	}
-	//spi = wiringPiSPIGetFd(CHANNEL);
+	spi = wiringPiSPIGetFd(CHANNEL);
+		
+	/*
 	if(spi==NULL){
 		printf("Getting SPI FD failed\n");
 		return -2;
 	}
+	*/
 	return 0;
 }
 void oneColor(unsigned char r, unsigned char g, unsigned char b){
-	for(int i=0;i<NLED;i++){
-		data[3*i] 	= r;
+	int i=0;
+	for(i=0;i<NLED;i++){
+		data[3*i]   = r;
 		data[3*i+1] = g;
 		data[3*i+2] = b;
 	}
@@ -44,13 +44,15 @@ int readControlFile(char* url){
 	FILE *fd;
 	int line,r,g,b;	
 	char cmd[10];
+	int i=0;
 
 	fd = fopen(url, "r");
 
 	if(fd == NULL) {
 		printf("Datei konnte NICHT geoeffnet werden.\n");
 	}
-	for(int i=0;i<12;i++){
+	
+	for(i=0;i<12;i++){
 		
 		if(fscanf(fd, "%s", cmd)!=EOF){
 			if(strcmp(cmd, "all")==0){
@@ -68,18 +70,31 @@ int readControlFile(char* url){
 }
 
 int main(int argc, char *argv[]){
-
+	int i=0;
 	ret=init();
 	if(ret=init()!=0){
 		printf("Init failed\n");
 		return ret;
 	}
-	oneColor(0,0,0);
-
-	data[0] = 255;
-
-	if(write(spi, data, LEN)==LEN){
-		printf("Writing failed\n");
+	oneColor(180,0,180);
+	/*
+	data[0] = (unsigned char)100;
+	data[1] = (unsigned char)0;
+	data[2] = (unsigned char)0;
+	*/
+	/*
+	for(i=0;i<NLED;i++){
+		data[3*i]=55;
+		data[3*i+1]=55;
+		data[3*i+2]=55;
+		ret=write(spi, data, LEN);
+		sleep(1);
+	}
+	*/
+	ret=write(spi,data,LEN);
+	printf("Debug: ret=%d, LEN=%d, spi=%d\n",ret,LEN,spi);
+	if(ret!=LEN){
+		printf("Writing failed. ret=%d, LEN=%d\n",ret,LEN);
 		return 2;
 	}
 	//readControlFile("C:\\Users\\Admin\\Desktop\\Projects\\RaspLight\\controlFile.txt");
